@@ -55,8 +55,8 @@ const parseToken = (token: Token) => {
     )
         return `<span class="text-red-400">${lexeme}</span>`;
     if (type === 'IDENTIFIER') return `<span class="text-blue-300">${lexeme}</span>`;
-    if (type === 'STRING' || type === 'number')
-        return `<span class="text-purple-300">${lexeme}</span>`;
+    if (type === 'STRING' || type === 'NUMBER')
+        return `<span class="text-purple-300">${lexeme.split("\n").join(`</span><br/><span class="text-purple-300">`)}</span></span>`;
     if (types.cover.includes(type)) return `<span class="text-neutral-300">${lexeme}</span>`;
     if (type === 'NEWLINE') return `<br/>`; // <span style="color: #666">${line + 1} |</span>
     if (type === 'SPACE') return '&nbsp;'.repeat(lexeme.length);
@@ -65,4 +65,4 @@ const parseToken = (token: Token) => {
 
 export const beautify = (tokens: Token[]) => {
     return tokens.map((token) => parseToken(token)).join('').split("<br/>"); // `<span style="color: #666">1 |</span> ` +
-};
+}; 

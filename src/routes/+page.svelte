@@ -4,27 +4,33 @@
 	import { source } from '$lib/store';
 </script>
 
-<div class="mx-auto my-20 flex max-w-3xl flex-col gap-6">
-	<div class="h-96">
+<div class="grid h-[100svh] gap-3 p-3 md:grid-cols-2 md:gap-4 md:p-4">
+	<div class="h-[calc(50svh-0.75rem)] md:h-[calc(100svh-2rem)]">
 		<Editor {source} />
 	</div>
 
-	<ul class="flex flex-col">
-		<!-- {JSON.stringify(TEA(source))} -->
-		<li class="mb-1 grid grid-cols-4 gap-3">
-			<div class="font-semibold text-neutral-800">TYPE</div>
-			<div>LEXEME</div>
-			<div>LITERAL</div>
-			<div>LINE</div>
-		</li>
-		<div class="mb-1 w-full border-t border-neutral-400"></div>
-		{#each TEA($source) || [] as token}
-			<li class="grid grid-cols-4 gap-3">
-				<div class="font-semibold text-neutral-800">{token.type}</div>
-				<div>{token.lexeme}</div>
-				<div class={`${token.literal ?? 'text-neutral-300'}`}>{token.literal}</div>
-				<div>{token.line}</div>
+	<div
+		class="flex h-[calc(50svh-1.5rem)] flex-col gap-3 text-xs md:h-[calc(100vh-2rem)] md:gap-4 md:text-sm"
+	>
+		<ul class="flex h-1/2 flex-col overflow-y-scroll rounded-md border bg-gray-50 p-4">
+			<li class="mb-1 grid grid-cols-4 gap-3">
+				<div class="font-semibold text-neutral-800">TYPE</div>
+				<div>LEXEME</div>
+				<div>LITERAL</div>
+				<div>LINE</div>
 			</li>
-		{/each}
-	</ul>
+			<div class="mb-1 w-full border-t border-neutral-400"></div>
+			{#each TEA($source).tokens || [] as token}
+				<li class="grid grid-cols-4 gap-3">
+					<div class="font-semibold text-neutral-800">{token.type}</div>
+					<div class="w-full overflow-x-clip">{token.lexeme}</div>
+					<div class={`${token.literal ?? 'text-neutral-400'}`}>{token.literal}</div>
+					<div>{token.line}</div>
+				</li>
+			{/each}
+		</ul>
+		<div class="flex h-1/2 items-center justify-center rounded-md border bg-gray-50">
+			PLACEHOLDER FOR AST
+		</div>
+	</div>
 </div>

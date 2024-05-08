@@ -262,7 +262,13 @@ export const scan = (source: string) => {
     }
     while(!isAtEnd(context.start, context)) {
         const result = scanToken(context)
-        if(!result.success) return panic(context)
+        if(!result.success) {
+            panic(context)
+            return {
+                success: false,
+                tokens
+            }
+        }
         tokens.push(result.token as Token)
         if(typeof result.leap === "number") context.start += result.leap
         else {
@@ -270,5 +276,8 @@ export const scan = (source: string) => {
             context.line += result.leap[1]
         }
     }
-    return tokens
+    return {
+        success: true,
+        tokens
+    }
 }
