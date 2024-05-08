@@ -191,7 +191,8 @@ const scanNumber: ScanFunction = (context) => {
 
 const scanSpaces: ScanFunction = (context) => {
     const [success, char] = view(0, context)
-    if(!success || [" ", "\t", "\r"].indexOf(char) === -1) return { success: false }
+
+    if(!success || ![" ", "\t", "\r"].includes(char)) return { success: false }
 
     let leap = 1
     while(checkResult(view(leap, context), (char: string) => [" ", "\t", "\r"].indexOf(char) !== -1)) leap += 1
@@ -268,6 +269,5 @@ export const scan = (source: string) => {
             context.line += result.leap[1]
         }
     }
-    console.log(`${context.source} -> success!`)
     return tokens
 }
