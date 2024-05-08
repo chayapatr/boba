@@ -26,13 +26,15 @@
 	$: tokens = TEA($source).tokens || [];
 </script>
 
-<div class="flex h-full overflow-y-scroll rounded-md border-y bg-gray-800 py-4 pl-2 pr-4 font-mono">
+<div
+	class="flex h-full overflow-y-scroll rounded-md border border-y bg-gray-50 py-4 pl-2 pr-4 font-mono"
+>
 	<div class="relative h-full w-full">
 		<div class="relative" bind:this={editor}>
 			{#each beautify(tokens) as line, i}
 				<div class="flex divide-x divide-neutral-500">
 					<div
-						class="w-[48px] pr-2 text-right text-neutral-500
+						class="w-[48px] pr-2 text-right text-neutral-600
             "
 					>
 						{i + 1}
@@ -53,7 +55,7 @@
 		>
 			<textarea
 				class="h-full w-full overflow-y-hidden break-all bg-transparent font-mono outline-none"
-				style={`color: ${tokens.length <= 0 || !TEA($source).success ? '#bbb' : 'transparent'}; caret-color: #bbb; resize: none`}
+				style={`color: ${tokens.length <= 0 || !TEA($source).success ? 'rgba(100,100,100,0.3)' : 'transparent'}; caret-color: #bbb; resize: none`}
 				bind:value={$source}
 			></textarea>
 		</div>
