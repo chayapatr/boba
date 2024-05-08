@@ -3,7 +3,10 @@ export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 
 	theme: {
-		extend: {}
+		fontFamily: {
+			mono: ['"Zed Mono Extended"']
+		},
+		extend: {},
 	},
 
 	plugins: [require('@tailwindcss/typography')]

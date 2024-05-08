@@ -6,10 +6,10 @@
 </script>
 
 <div class="mx-auto flex h-[100svh] max-w-3xl flex-col gap-3 py-20">
-	<div class="mb-2 flex gap-3 border-y py-4 font-mono">
+	<div class="mb-2 flex gap-3 rounded-md border-y bg-gray-800 p-4 font-mono">
 		<div class="w-10">
 			{#each Array(rows) as _, i}
-				<div class="text-neutral-600">{i + 1}</div>
+				<div class="text-neutral-300">{i + 1}</div>
 			{/each}
 		</div>
 		<div class="relative w-full">
@@ -19,7 +19,7 @@
 				name=""
 				id=""
 				class="absolute left-0 top-0 w-full bg-transparent font-mono outline-none"
-				style={`color: ${tokens.length <= 0 ? 'black' : 'transparent'}; caret-color: black;`}
+				style={`color: ${tokens.length <= 0 ? 'black' : 'transparent'}; caret-color: #bbb; resize: none`}
 				bind:value={source}
 			></textarea>
 		</div>
@@ -38,7 +38,7 @@
 			<li class="grid grid-cols-4 gap-3">
 				<div class="font-semibold text-neutral-800">{token.type}</div>
 				<div>{token.lexeme}</div>
-				<div>{token.literal}</div>
+				<div class={`${token.literal ?? 'text-neutral-300'}`}>{token.literal}</div>
 				<div>{token.line}</div>
 			</li>
 		{/each}
