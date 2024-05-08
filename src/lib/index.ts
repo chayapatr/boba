@@ -40,7 +40,8 @@ const types = {
         'SUPER',
         'THIS',
         'TRUE',
-        'VAR',
+        'LET',
+        'CONST',
         'WHILE'
     ]
 };
@@ -63,5 +64,5 @@ const parseToken = (token: Token) => {
 };
 
 export const beautify = (tokens: Token[]) => {
-    return tokens.map((token) => parseToken(token)).join(''); // `<span style="color: #666">1 |</span> ` +
+    return tokens.map((token) => parseToken(token)).join('').split("<br/>"); // `<span style="color: #666">1 |</span> ` +
 };

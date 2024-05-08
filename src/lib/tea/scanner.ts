@@ -223,7 +223,8 @@ const scanIdentifier: ScanFunction = (context) => {
         super:  "SUPER",
         this:  "THIS",
         true:  "TRUE",
-        var:  "VAR",
+        let:  "LET",
+        const: "CONST",
         while:  "WHILE",
     }
 

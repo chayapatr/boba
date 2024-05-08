@@ -1,28 +1,12 @@
 <script lang="ts">
-	import { TEA, beautify } from '$lib';
-	let source = '"hello"+3..14!=';
-	$: tokens = TEA(source) || [];
-	$: rows = source.split('\n').length;
+	import { TEA } from '$lib';
+	import Editor from '$lib/components/Editor.svelte';
+	import { source } from '$lib/store';
 </script>
 
-<div class="mx-auto flex h-[100svh] max-w-3xl flex-col gap-3 py-20">
-	<div class="mb-2 flex gap-3 rounded-md border-y bg-gray-800 p-4 font-mono">
-		<div class="w-10">
-			{#each Array(rows) as _, i}
-				<div class="text-neutral-300">{i + 1}</div>
-			{/each}
-		</div>
-		<div class="relative w-full">
-			<div class="w-full">{@html beautify(tokens)}</div>
-			<textarea
-				{rows}
-				name=""
-				id=""
-				class="absolute left-0 top-0 w-full bg-transparent font-mono outline-none"
-				style={`color: ${tokens.length <= 0 ? 'black' : 'transparent'}; caret-color: #bbb; resize: none`}
-				bind:value={source}
-			></textarea>
-		</div>
+<div class="mx-auto my-20 flex max-w-3xl flex-col gap-6">
+	<div class="h-96">
+		<Editor {source} />
 	</div>
 
 	<ul class="flex flex-col">
@@ -34,7 +18,7 @@
 			<div>LINE</div>
 		</li>
 		<div class="mb-1 w-full border-t border-neutral-400"></div>
-		{#each tokens as token}
+		{#each TEA($source) || [] as token}
 			<li class="grid grid-cols-4 gap-3">
 				<div class="font-semibold text-neutral-800">{token.type}</div>
 				<div>{token.lexeme}</div>
