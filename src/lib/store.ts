@@ -1,3 +1,3 @@
 import { writable } from "svelte/store";
 
-export const source = writable<string>('"hello"+3..14!=')
+export const source = writable<string>('(1+1)*2')

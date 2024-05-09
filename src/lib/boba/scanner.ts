@@ -299,6 +299,7 @@ export const scan = (source: string) => {
             context.line += result.leap[1]
         }
     }
+    tokens.push(createToken("EOF", "", undefined, context.line))
     return {
         success: true,
         msg: "",
