@@ -1,9 +1,33 @@
 <script lang="ts">
+	// @ts-nocheck
 	import { BOBA } from '$lib';
+	import type { ASTNode } from '$lib/boba/parser/generator';
 	import Editor from '$lib/components/Editor.svelte';
 	import { source } from '$lib/store';
 
 	$: result = BOBA($source);
+
+	const ASTtoString = (ast: ASTNode | undefined) => {
+		if (!ast) return '';
+		const level = 0;
+		const dfs = (node: ASTNode, level: number, prefix: string) => {
+			switch (node.type as string) {
+				case 'LITERAL':
+					return `<br/>${prefix}⊢ VALUE: ${node.expr}`;
+				case 'BINARY':
+					return `<br/>${prefix}⊢ BIN (${node.opr.lexeme})
+					${dfs(node.left, level + 1, prefix + '|&nbsp;')}
+					${dfs(node.right, level + 1, prefix + '|&nbsp;')}`;
+				case 'GROUPING':
+					return `<br/>${prefix}⊢ [GROUP]
+					${dfs(node.expr, level + 1, prefix + '|&nbsp;')}`;
+				case 'UNARY':
+					return `<br/>${prefix}⊢ UNARY (${node.opr.lexeme})${dfs(node.right, level + 1, prefix + '|&nbsp;')}`;
+			}
+		};
+		const result = dfs(ast, level, '');
+		return '<span class="font-semibold">PROGRAM</span>' + result;
+	};
 </script>
 
 <div class="grid h-[100svh] gap-3 p-3 md:grid-cols-2 md:gap-4 md:p-4">
@@ -16,8 +40,8 @@
 	>
 		<ul class="flex h-1/2 flex-col overflow-y-scroll rounded-md border bg-gray-50 p-4">
 			<div class="mb-1 font-semibold">
-				<span class={result.success ? 'text-emerald-600' : 'text-red-600'}
-					>{result.success ? 'SCANNING SUCCESS' : `ERROR: ${result.msg}`}</span
+				<span class={result.scanned.success ? 'text-emerald-600' : 'text-red-600'}
+					>{result.scanned.success ? 'SCANNING SUCCESS' : `ERROR: ${result.scanned.msg}`}</span
 				>
 			</div>
 			<li class="mb-1 grid grid-cols-4 gap-3 font-semibold">
@@ -27,7 +51,7 @@
 				<div>LINE</div>
 			</li>
 			<div class="mb-1 w-full border-t border-neutral-400"></div>
-			{#each result.tokens.filter((token) => !['NEWLINE', 'SPACE'].includes(token.type)) || [] as token}
+			{#each result.scanned.tokens.filter((token) => !['NEWLINE', 'SPACE'].includes(token.type)) || [] as token}
 				<li class="grid grid-cols-4 gap-3">
 					<div class=" text-neutral-800">{token.type}</div>
 					<div class="w-full overflow-x-clip">{token.lexeme}</div>
@@ -36,8 +60,17 @@
 				</li>
 			{/each}
 		</ul>
-		<div class="flex h-1/2 items-center justify-center rounded-md border bg-gray-50">
-			PLACEHOLDER FOR AST
+		<div class="flex h-1/2 flex-col gap-3 rounded-md border bg-gray-50 p-4">
+			<!-- <div class="font-semibold">
+				<span class={result.scanned.success ? 'text-emerald-600' : 'text-red-600'}
+					>{result.scanned.success ? 'PARSING SUCCESS' : `ERROR: ${result.scanned.msg}`}</span
+				>
+			</div> -->
+			<div class="font-mono">
+				{#if result.scanned.success}
+					{@html ASTtoString(result.parsed.node)}
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>

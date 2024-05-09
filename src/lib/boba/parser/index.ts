@@ -105,7 +105,7 @@ const expression: ExprFunction = (tokens, location) => {
 
 /* ----- Parser ----- */
 
-export const parse = (tokens: Token[]) => {
+export const parse = (tokens: Token[]): { node: ASTNode | undefined, next: number } => {
     const semanticTokens: Token[] = tokens.filter(token => !['NEWLINE', 'SPACE'].includes(token.type))
-    return semanticTokens.length > 1 ? expression(semanticTokens, 0) : []
+    return semanticTokens.length > 1 ? expression(semanticTokens, 0) : { node: undefined, next: -1 }
 }

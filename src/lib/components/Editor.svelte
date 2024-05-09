@@ -30,7 +30,7 @@
 >
 	<div class="relative h-full w-full">
 		<div class="relative" bind:this={editor}>
-			{#each beautify(result.tokens) as line, i}
+			{#each beautify(result.scanned.tokens) as line, i}
 				<div class="flex divide-x divide-neutral-500">
 					<div
 						class="w-6 pr-2 text-right text-neutral-600 md:w-12
@@ -54,7 +54,7 @@
 		>
 			<textarea
 				class="h-full w-full overflow-y-hidden break-all bg-transparent font-mono outline-none"
-				style={`color: ${result.tokens.length <= 0 || !result.success ? 'rgba(100,100,100,0.3)' : 'transparent'}; caret-color: #666; resize: none`}
+				style={`color: ${result.scanned.tokens.length <= 0 || !result.scanned.success ? 'rgba(100,100,100,0.3)' : 'transparent'}; caret-color: #666; resize: none`}
 				bind:value={$source}
 			></textarea>
 		</div>

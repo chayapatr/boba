@@ -2,10 +2,8 @@ import { scan } from "./scanner"
 import { parse } from "./parser"
 
 export const run = (source: string) => {
-    const { success, tokens, msg } = scan(source)
-    const ast = parse(tokens)
-
-    console.log("final ->", ast)
+    const scanned = scan(source)
+    const parsed = scanned.success ? parse(scanned.tokens) : { node: [], next: 0 }
     
-    return { success, tokens, msg }
+    return { scanned, parsed }
 }
