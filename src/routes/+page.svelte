@@ -8,7 +8,7 @@
 
 <div class="grid h-[100svh] gap-3 p-3 md:grid-cols-2 md:gap-4 md:p-4">
 	<div class="h-[calc(50svh-0.75rem)] md:h-[calc(100svh-2rem)]">
-		<Editor {source} />
+		<Editor {result} />
 	</div>
 
 	<div
@@ -16,8 +16,8 @@
 	>
 		<ul class="flex h-1/2 flex-col overflow-y-scroll rounded-md border bg-gray-50 p-4">
 			<div class="mb-1 font-semibold">
-				STATUS: <span class={result.success ? 'text-emerald-600' : 'text-red-600'}
-					>{result.success ? 'SUCCESS' : 'FAIL'}</span
+				<span class={result.success ? 'text-emerald-600' : 'text-red-600'}
+					>{result.success ? 'SCANNING SUCCESS' : `ERROR: ${result.msg}`}</span
 				>
 			</div>
 			<li class="mb-1 grid grid-cols-4 gap-3 font-semibold">

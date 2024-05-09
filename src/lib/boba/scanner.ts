@@ -4,6 +4,13 @@ interface ScanResult {
 
 interface ScanResultFail extends ScanResult {
     success: false
+    error: false
+}
+
+interface ScanResultError extends ScanResult {
+    success: false
+    error: true
+    message: string
 }
 
 interface ScanResultSuccess extends ScanResult {
@@ -18,8 +25,10 @@ interface Context {
     line: number
 }
 
-const panic = (context: Context) => {
-    console.log(`skill issue detected at line ${context.line} -> unexpected character "${context.source[context.start]}"`)
+const panic = (context: Context, error: string = "" ) => {
+    const msg = `[Line ${context.line}] → ${error ? error : 'unexpected character "' +context.source[context.start] + '"'}`
+    console.log(msg)
+    return msg
 }
 
 /* ----- Helper Functions ----- */
@@ -54,6 +63,7 @@ const isAlpha = (char: string): boolean => {
 
 interface ScanFunctionResult {
     success: boolean
+    error?: string
 }
 
 interface ScanFunctionResultSuccess extends ScanFunctionResult {
@@ -156,7 +166,7 @@ const scanStringLiteral: ScanFunction = (context) => {
     if(!checkResult(
         view(leap, context),
         (char: string) => char === '"')
-    ) return { success: false, leap: leap + 1 }
+    ) return { success: false, error: "Unterminated String", leap: leap + 1 }
 
     const literal = context.source.slice(context.start + 1, context.start + leap)
     return {
@@ -180,7 +190,8 @@ const scanNumber: ScanFunction = (context) => {
         if(viewResult[1] === ".") {
             if(!isDigit(view(leap + 1, context)[1])) {
                 return {
-                    success: false
+                    success: false,
+                    error: "unexpected dot behavior in number"
                 }
             } else dot = true
         }
@@ -250,15 +261,18 @@ const scanIdentifier: ScanFunction = (context) => {
 
 /* ----- Runner Functions ----- */
 
-const scanToken = (context: Context): ScanResultFail | ScanResultSuccess => {
+const scanToken = (context: Context): ScanResultSuccess | ScanResultFail | ScanResultError => {
     const cases = [ scanSingleCharSymbol, scanDoubleCharSymbol, scanStringLiteral, scanNumber, scanSpaces, scanIdentifier ]
     for(const c in cases) {
         const result = cases[c](context)
         if(result.success) {
             return { success: true, token: result.token, leap: result.leap }
         }
+        if(result.error) {
+            return { success: false, error: true, message: result.error }
+        }
     }
-    return { success: false }
+    return { success: false, error: false }
 }
 
 export const scan = (source: string) => {
@@ -271,9 +285,10 @@ export const scan = (source: string) => {
     while(!isAtEnd(context.start, context)) {
         const result = scanToken(context)
         if(!result.success) {
-            panic(context)
+            const err = result.error ? panic(context, result.message) : panic(context)
             return {
                 success: false,
+                msg: err,
                 tokens
             }
         }
@@ -286,6 +301,7 @@ export const scan = (source: string) => {
     }
     return {
         success: true,
+        msg: "",
         tokens
     }
 }

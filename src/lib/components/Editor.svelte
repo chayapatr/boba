@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { BOBA, beautify } from '$lib';
+	import { source } from '$lib/store';
 	import { onMount } from 'svelte';
 
-	export let source;
+	export let result;
 	let editor: HTMLDivElement;
 	let editorHeight: number;
 
@@ -22,8 +23,6 @@
 			}, 300);
 		});
 	});
-
-	$: result = BOBA($source) || [];
 </script>
 
 <div
