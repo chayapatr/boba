@@ -17,7 +17,7 @@ interface GroupingExpr extends Expr {
 }
 
 interface LiteralExpr extends Expr {
-    expr: ASTNode | string
+    expr: string | number | boolean
 }
 
 interface UnaryExpr extends Expr {
@@ -58,7 +58,7 @@ const Grouping = (expr: Expr): GroupingExpr => {
 
 const Literal = (expr: string | number | boolean | null): LiteralExpr => {
     if (expr == null) return {type: "LITERAL", expr: "nil"} ;
-    return {type: "LITERAL", expr: expr}
+    return {type: "LITERAL", expr }
 }
 
 const Unary = (opr: Opr, right: Expr): UnaryExpr => {

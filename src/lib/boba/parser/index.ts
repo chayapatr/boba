@@ -1,16 +1,5 @@
-/* eslint-disable no-empty */
-/* eslint-disable prefer-const */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Expr } from "./generator"
 import type { ASTNode } from "./generator"
-
-/* ----- Grammar notation | Code representation ----- */
-
-// Terminal     | Code to match and consume a token
-// Nonterminal  | Call to that rule’s function
-// |	        | if or switch statement
-// * or +       | while or for loop
-// ?            | if statement
 
 /* ----- Helper Functions ----- */
 
@@ -27,7 +16,7 @@ const get = (tokens: Token[], location: number): Token => {
     return tokens[location]
 }
 
-/* ----- Grammar Evaluator ----- */
+/* ----- Expression Evaluator ----- */
 
 type ExprFunction = (tokens: Token[], location: number) => {
     node: ASTNode
@@ -71,10 +60,6 @@ const primary: ExprFunction = (tokens, location) => {
     }
 }
 
-const binary = () => {
-
-}
-
 /* unary → ( "!" | "-" ) unary | primary */
 const unary: ExprFunction = (tokens, location) => {
     if(match(tokens, location, ["BANG", "MINUS"])) {
@@ -85,70 +70,37 @@ const unary: ExprFunction = (tokens, location) => {
     return primary(tokens, location)
 }
 
-/* factor → unary ( ( "/" | "*" ) unary )* */
-const factor: ExprFunction = (tokens, location) => {
-    let { node: expr, next } = unary(tokens, location)
+/* BinaryExpr → EXPR ( ( OPR ) EXPR )* */
+const BinaryExprGenerator = (tokens: Token[], location: number, expr: ExprFunction, opr: TokenTypeStrings[]) => {
+    // eslint-disable-next-line prefer-const
+    let { node, next } = expr(tokens, location)
     let leap = next
 
-    while(match(tokens, leap, ["SLASH", "STAR"])) {
+    while(match(tokens, leap, opr)) {
         const opr = get(tokens, leap)
-        const { node: right, next } = unary(tokens, leap + 1)
-        expr = Expr.Binary(expr, opr, right)
+        const { node: right, next } = expr(tokens, leap + 1)
+        node = Expr.Binary(node, opr, right)
         leap = next
     }
 
-    return { node: expr, next: leap }
+    return { node, next: leap }
 }
+
+/* factor → unary ( ( "/" | "*" ) unary )* */
+const factor: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens, location, unary, ["SLASH", "STAR"])
 
 /* term → factor ( ( "-" | "+" ) factor )* */
-const term: ExprFunction = (tokens, location) => {
-    let { node: expr, next } = factor(tokens, location)
-    let leap = next
-
-    while(match(tokens, leap, ["MINUS", "PLUS"])) {
-        const opr = get(tokens, leap)
-        const { node: right, next } = factor(tokens, leap + 1)
-        expr = Expr.Binary(expr, opr, right)
-        leap = next
-    }
-
-    return { node: expr, next: leap }
-}
+const term: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens, location, factor, ["MINUS", "PLUS"])
 
 /* comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* */
-const comparison: ExprFunction = (tokens, location) => {
-    let { node: expr, next } = term(tokens, location)
-    let leap = next
-
-    while(match(tokens, leap, ["GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL"])) {
-        const opr = get(tokens, leap)
-        const { node: right, next } = term(tokens, leap + 1)
-        expr = Expr.Binary(expr, opr, right)
-        leap = next
-    }
-
-    return { node: expr, next: leap }
-}
+const comparison: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens, location, term, ["GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL"])
 
 /* equality → comparison ( ( "!=" | "==" ) comparison )* */
-const equality: ExprFunction = (tokens, location) => {
-    let { node: expr, next } = comparison(tokens, location)
-    let leap = next
-
-    while(match(tokens, leap, ["BANG_EQUAL", "EQUAL_EQUAL"])) {
-        const opr = get(tokens, leap)
-        const { node: right, next } = comparison(tokens, leap + 1)
-        expr = Expr.Binary(expr, opr, right)
-        leap = next + 1
-    }
-
-    return { node: expr, next: leap }
-}
+const equality: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens, location, comparison, ["BANG_EQUAL", "EQUAL_EQUAL"])
 
 /* expression → equality */
 const expression: ExprFunction = (tokens, location) => {
-    let { node, next } = equality(tokens, location)
-    return { node, next }
+    return equality(tokens, location)
 }
 
 /* ----- Parser ----- */
