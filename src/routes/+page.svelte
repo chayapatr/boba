@@ -16,13 +16,13 @@
 					return `<br/>${prefix}⊢ VALUE: ${node.expr}`;
 				case 'BINARY':
 					return `<br/>${prefix}⊢ BIN (${node.opr.lexeme})
-					${dfs(node.left, level + 1, prefix + '|&nbsp;')}
-					${dfs(node.right, level + 1, prefix + '|&nbsp;')}`;
+					${dfs(node.left, level + 1, prefix + '&nbsp;&nbsp;')}
+					${dfs(node.right, level + 1, prefix + '&nbsp;&nbsp;')}`;
 				case 'GROUPING':
 					return `<br/>${prefix}⊢ [GROUP]
-					${dfs(node.expr, level + 1, prefix + '|&nbsp;')}`;
+					${dfs(node.expr, level + 1, prefix + '&nbsp&nbsp;')}`;
 				case 'UNARY':
-					return `<br/>${prefix}⊢ UNARY (${node.opr.lexeme})${dfs(node.right, level + 1, prefix + '|&nbsp;')}`;
+					return `<br/>${prefix}⊢ UNARY (${node.opr.lexeme})${dfs(node.right, level + 1, prefix + '&nbsp&nbsp;')}`;
 			}
 		};
 		const result = dfs(ast, level, '');
@@ -60,14 +60,16 @@
 				</li>
 			{/each}
 		</ul>
-		<div class="flex h-1/2 flex-col gap-3 rounded-md border bg-gray-50 p-4">
-			<!-- <div class="font-semibold">
-				<span class={result.scanned.success ? 'text-emerald-600' : 'text-red-600'}
-					>{result.scanned.success ? 'PARSING SUCCESS' : `ERROR: ${result.scanned.msg}`}</span
+		<div class="flex h-1/2 flex-col gap-3 overflow-scroll rounded-md border bg-gray-50 p-4">
+			<div class="font-semibold">
+				<span class={!result.parsed.error ? 'text-emerald-600' : 'text-red-600'}
+					>{!result.parsed.error
+						? 'PARSING SUCCESS'
+						: `ERROR: ${result.parsed.error.split(',').at(0)}`}</span
 				>
-			</div> -->
+			</div>
 			<div class="font-mono">
-				{#if result.scanned.success}
+				{#if !result.scanned.error && !result.parsed.error}
 					{@html ASTtoString(result.parsed.node)}
 				{/if}
 			</div>

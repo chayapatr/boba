@@ -26,7 +26,7 @@ interface Context {
 }
 
 const panic = (context: Context, error: string = "" ) => {
-    const msg = `[Line ${context.line}] → ${error ? error : 'unexpected character "' +context.source[context.start] + '"'}`
+    const msg = `[LINE ${context.line}] → ${error ? error : 'UNEXPECTED CHARACTER "' +context.source[context.start] + '"'}`
     console.log(msg)
     return msg
 }
@@ -191,7 +191,7 @@ const scanNumber: ScanFunction = (context) => {
             if(!isDigit(view(leap + 1, context)[1])) {
                 return {
                     success: false,
-                    error: "unexpected dot behavior in number"
+                    error: "UNEXPECTED DOT",
                 }
             } else dot = true
         }
