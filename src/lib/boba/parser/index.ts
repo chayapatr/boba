@@ -67,7 +67,7 @@ const primary: ExprFunction = (tokens, location) => {
     }
 
     if(match(tokens, location, ["EOF"])) {
-        return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location}] → UNEXPECTED EOF` }
+        return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location}] → UNEXPECTED EOF (AFTER '${tokens[location - 1].lexeme}')` }
     }
 
     return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location}] → UNEXPECTED CHARACTER '${tokens[location].lexeme}', ` }

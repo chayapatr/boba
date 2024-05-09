@@ -1,3 +1,17 @@
 @tailwind utilities;
 @tailwind components;
 @tailwind base;
+
+@font-face {
+	font-family: 'Zed Mono Extended';
+	src: url('/font/zed.ttf') format('truetype');
+	font-weight: 400;
+	font-style: regular;
+}
+
+@font-face {
+	font-family: 'Zed Mono Extended';
+	src: url('/font/zed-bold.ttf') format('truetype');
+	font-weight: 600;
+	font-style: regular;
+}
