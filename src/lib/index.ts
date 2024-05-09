@@ -1,6 +1,6 @@
-import { run } from "./tea/runner"
+import { run } from "./boba/runner";
 
-export const TEA = (source: string) => {
+export const BOBA = (source: string) => {
     // run file
     // run prompt
     // run("+")
@@ -35,7 +35,6 @@ const types = {
         'IF',
         'NIL',
         'OR',
-        'PRINT',
         'RETURN',
         'SUPER',
         'THIS',
@@ -46,23 +45,40 @@ const types = {
     ]
 };
 
+const generate = (color: "blue" | "red" | "purple" | "green" | "orange" | "gray" | "lightgray", text: string) => {
+    const tw = {
+        blue: 'text-blue-500',
+        red: 'text-red-600',
+        purple: 'text-purple-500',
+        green: 'text-lime-600',
+        orange: 'text-amber-600',
+        gray: 'text-neutral-500',
+        lightgray: 'text-neutral-300'
+    }
+    return `<span class="${tw[color]}">${text}</span>`
+}
+
 const parseToken = (token: Token) => {
     const { type, lexeme } = token;
+
+    if(["TRUE", "FALSE", "IDENTIFIER", "NUMBER"].includes(type)) return generate("blue", lexeme);
+    if (types.cover.includes(type)) return generate("gray", lexeme);
+    if(type === "PRINT") return generate("orange", lexeme);
     if (
         types.single.includes(type) ||
         types.comparison.includes(type) ||
         types.keywords.includes(type)
-    )
-        return `<span class="text-red-600">${lexeme}</span>`;
-    if (type === 'IDENTIFIER') return `<span class="text-blue-500">${lexeme}</span>`;
-    if (type === 'STRING' || type === 'NUMBER')
-        return `<span class="text-purple-500">${lexeme.split("\n").join(`</span><br/><span class="text-purple-500">`)}</span></span>`;
-    if (types.cover.includes(type)) return `<span class="text-neutral-500">${lexeme}</span>`;
-    if (type === 'NEWLINE') return `<br/>`; // <span style="color: #666">${line + 1} |</span>
-    if (type === 'SPACE') return '&nbsp;'.repeat(lexeme.length);
-    return `<span class="text-neutral-50">${lexeme}</span>`;
+    ) return generate("red", lexeme);
+
+    if (type === 'STRING')
+        return `<span class="text-purple-500">${lexeme.split("\n").join(`</span>%break%<span class="text-purple-500">`)}</span></span>`;
+
+    if (type === 'NEWLINE') return `<br/>`;
+    if (type === 'SPACE') return generate("lightgray", '⋅'.repeat(lexeme.length));
+
+    return generate("blue", lexeme);
 };
 
 export const beautify = (tokens: Token[]) => {
     return tokens.map((token) => parseToken(token)).join('').split("<br/>"); // `<span style="color: #666">1 |</span> ` +
-}; 
+};

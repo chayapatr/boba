@@ -47,7 +47,7 @@ const isDigit = (char: string): boolean => {
 }
 
 const isAlpha = (char: string): boolean => {
-    return (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char === "_"
+    return (char >= "a" && char <= "z") || (char >= "A" && char <= "Z")
 }
 
 /* ----- Scanner Functions ----- */
@@ -99,32 +99,42 @@ const scanSingleCharSymbol: ScanFunction = (context) => {
 
 const scanDoubleCharSymbol: ScanFunction = (context) => {
     const [success, char] = view(0, context)
-    if(!success || ["=", ">", "<", "!"].indexOf(char) === -1) return { success: false }
+    if(!success || !["=", ">", "<", "!", "|", "&"].includes(char)) return { success: false }
     const [ , char2 ] = view(1, context)
-    const chars: {
+
+    const doubleChar: {
         [key: string]: TokenTypeStrings
     } =  {
         "==": "EQUAL_EQUAL",
         "!=": "BANG_EQUAL",
         "<=": "LESS_EQUAL",
         ">=": "GREATER_EQUAL",
-        "=": "EQUAL",
+        "&&": "AND",
+        "||": "OR",
+    }
+    const singleChar: {
+        [key: string]: TokenTypeStrings
+    } = {
+        "=": "EQUAL", 
         ">": "GREATER",
         "<": "LESS",
         "!": "BANG"
     }
-    if(char2 === "=") {
+
+    if(char + char2 in doubleChar) {
         return {
             success: true,
-            token: createToken(chars[char + char2], char + char2, undefined, context.line),
+            token: createToken(doubleChar[char + char2], char + char2, undefined, context.line),
             leap: 2
         }
-    } else {
+    } else if (char in singleChar) {
         return {
             success: true,
-            token: createToken(chars[char], char, undefined, context.line),
+            token: createToken(singleChar[char], char, undefined, context.line),
             leap: 1
         }
+    } else {
+        return { success: false }
     }
 }
 
@@ -146,7 +156,7 @@ const scanStringLiteral: ScanFunction = (context) => {
     if(!checkResult(
         view(leap, context),
         (char: string) => char === '"')
-    ) return { success: false }
+    ) return { success: false, leap: leap + 1 }
 
     const literal = context.source.slice(context.start + 1, context.start + leap)
     return {
@@ -170,9 +180,7 @@ const scanNumber: ScanFunction = (context) => {
         if(viewResult[1] === ".") {
             if(!isDigit(view(leap + 1, context)[1])) {
                 return {
-                    success: true,
-                    token: createToken("NUMBER", literal, Number(literal), context.line),
-                    leap
+                    success: false
                 }
             } else dot = true
         }
@@ -269,7 +277,7 @@ export const scan = (source: string) => {
                 tokens
             }
         }
-        tokens.push(result.token as Token)
+        tokens.push(result.token)
         if(typeof result.leap === "number") context.start += result.leap
         else {
             context.start += result.leap[0]
