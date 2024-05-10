@@ -48,7 +48,9 @@ const primary: ExprFunction = (tokens, location) => {
         }
 
     if(match(tokens, location, ["LEFT_PAREN"])) {
+        console.log("LEFT ->", location)
         const { node: expr, next } = expression(tokens, location + 1)
+        console.log("NEXT ->", expr, next)
         if(match(tokens, next, ["RIGHT_PAREN"])) {
             return {
                 node: Expr.Grouping(expr),
@@ -60,10 +62,8 @@ const primary: ExprFunction = (tokens, location) => {
         }
     }
 
-    console.log(location, tokens[location])
-
     if(match(tokens, location, ["RIGHT_PAREN"])) {
-        return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location}] → UNEXPECTED RIGHT PAREN` }
+        return { node: Expr.Literal(null), next: location, error: `[TOKEN ${location}] → UNEXPECTED RIGHT PAREN` }
     }
 
     if(match(tokens, location, ["EOF"])) {
@@ -114,6 +114,7 @@ const equality: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens,
 
 /* expression → equality */
 const expression: ExprFunction = (tokens, location) => {
+    console.log("EXPRESS ->", location)
     return equality(tokens, location)
 }
 
