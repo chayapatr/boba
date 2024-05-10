@@ -48,9 +48,7 @@ const primary: ExprFunction = (tokens, location) => {
         }
 
     if(match(tokens, location, ["LEFT_PAREN"])) {
-        console.log("LEFT ->", location)
         const { node: expr, next } = expression(tokens, location + 1)
-        console.log("NEXT ->", expr, next)
         if(match(tokens, next, ["RIGHT_PAREN"])) {
             return {
                 node: Expr.Grouping(expr),
@@ -114,7 +112,6 @@ const equality: ExprFunction = (tokens, location) => BinaryExprGenerator(tokens,
 
 /* expression → equality */
 const expression: ExprFunction = (tokens, location) => {
-    console.log("EXPRESS ->", location)
     return equality(tokens, location)
 }
 
