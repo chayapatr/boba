@@ -11,7 +11,7 @@
 	$: result = BOBA($source);
 
 	// ── Dark mode ────────────────────────────────────────────────
-	let dark = false;
+	let dark = true;
 	$: if (typeof document !== 'undefined') {
 		document.documentElement.classList.toggle('dark', dark);
 	}
