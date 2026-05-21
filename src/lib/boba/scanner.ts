@@ -93,6 +93,7 @@ const scanSingleCharSymbol: ScanFunction = (context) => {
         "+": "PLUS",
         ";": "SEMICOLON",
         "*": "STAR",
+        "/": "SLASH",
         "\n": "NEWLINE"
     }
     if(success) {
