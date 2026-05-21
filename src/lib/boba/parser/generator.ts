@@ -25,12 +25,13 @@ interface UnaryExpr extends Expr {
     right: ASTNode
 }
 
-interface IdentifierExpr extends Expr {
-    expr: ASTNode | string
-}
-
 interface VariableExpr extends Expr {
     name: Token
+}
+
+interface AssignExpr extends Expr {
+    name: string
+    value: ASTNode
 }
 
 interface Stmt {
@@ -39,58 +40,73 @@ interface Stmt {
 }
 
 interface VarStmt {
-    type: string,
+    type: string
     name: string
     expr: ASTNode | null
 }
 
-export type ASTNode = Expr | BinaryExpr | GroupingExpr | UnaryExpr | IdentifierExpr | Stmt
-
-/* AST Node Generator Function */
-
-const Binary = (left: Expr, opr: Opr, right: Expr): BinaryExpr => {
-    return { type: "BINARY", left, opr, right }
+interface IfStmt {
+    type: "IF"
+    condition: ASTNode
+    then: ASTNode[]
+    else: ASTNode[] | null
 }
 
-const Grouping = (expr: Expr): GroupingExpr => {
-    return { type: "GROUPING", expr }
+interface WhileStmt {
+    type: "WHILE"
+    condition: ASTNode
+    body: ASTNode[]
 }
+
+interface BlockStmt {
+    type: "BLOCK"
+    body: ASTNode[]
+}
+
+export type ASTNode =
+    | Expr | BinaryExpr | GroupingExpr | UnaryExpr
+    | VariableExpr | AssignExpr
+    | Stmt | VarStmt | IfStmt | WhileStmt | BlockStmt
+
+/* AST Node Generator Functions */
+
+const Binary = (left: Expr, opr: Opr, right: Expr): BinaryExpr =>
+    ({ type: "BINARY", left, opr, right })
+
+const Grouping = (expr: Expr): GroupingExpr =>
+    ({ type: "GROUPING", expr })
 
 const Literal = (expr: string | number | boolean | null): LiteralExpr => {
-    if (expr == null) return {type: "LITERAL", expr: "nil"} ;
-    return {type: "LITERAL", expr }
+    if (expr == null) return { type: "LITERAL", expr: "nil" }
+    return { type: "LITERAL", expr }
 }
 
-const Unary = (opr: Opr, right: Expr): UnaryExpr => {
-    return { type: "UNARY", opr, right }
-}
+const Unary = (opr: Opr, right: Expr): UnaryExpr =>
+    ({ type: "UNARY", opr, right })
 
-const Variable = (name: Token): VariableExpr => {
-    return { type: "VARIABLE", name }
-}
+const Variable = (name: Token): VariableExpr =>
+    ({ type: "VARIABLE", name })
 
-const Print = (expr: ASTNode): Stmt => {
-    return { type: "PRINT", expr }
-}
+const Assign = (name: string, value: ASTNode): AssignExpr =>
+    ({ type: "ASSIGN", name, value })
 
-const Expression = (expr: ASTNode): Stmt => {
-    return { type: "EXPRESSION", expr }
-}
+const Print = (expr: ASTNode): Stmt =>
+    ({ type: "PRINT", expr })
 
-const Var = (name: string, expr: ASTNode | null): VarStmt => {
-    return { type: "VAR", name, expr}
-}
+const Expression = (expr: ASTNode): Stmt =>
+    ({ type: "EXPRESSION", expr })
 
-export const Stmt = {
-    Print,
-    Expression,
-    Var
-}
+const Var = (name: string, expr: ASTNode | null): VarStmt =>
+    ({ type: "VAR", name, expr })
 
-export const Expr = {
-    Binary,
-    Grouping,
-    Literal,
-    Unary,
-    Variable
-}
+const If = (condition: ASTNode, then: ASTNode[], elseBody: ASTNode[] | null): IfStmt =>
+    ({ type: "IF", condition, then, else: elseBody })
+
+const While = (condition: ASTNode, body: ASTNode[]): WhileStmt =>
+    ({ type: "WHILE", condition, body })
+
+const Block = (body: ASTNode[]): BlockStmt =>
+    ({ type: "BLOCK", body })
+
+export const Stmt = { Print, Expression, Var, If, While, Block }
+export const Expr = { Binary, Grouping, Literal, Unary, Variable, Assign }
