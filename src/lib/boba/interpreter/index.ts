@@ -136,7 +136,7 @@ const evaluate = (node: ASTNode, env: Environment): BobaValue => {
             if (args.length !== callee.params.length)
                 throw new Error(`Expected ${callee.params.length} args but got ${args.length}.`)
             const fnEnv = new Environment(callee.closure)
-            callee.params.forEach((p, i) => fnEnv.define(p, args[i] as Value))
+            ;(callee.params as string[]).forEach((p: string, i: number) => fnEnv.define(p, args[i] as Value))
             try {
                 executeBlock(callee.body, fnEnv, _currentOutput)
             } catch (e) {
