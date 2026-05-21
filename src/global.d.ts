@@ -24,7 +24,7 @@ enum TokenType {
 type TokenTypeStrings = keyof typeof TokenType
 
 interface Token {
-    type: TokenTypeString
+    type: TokenTypeStrings
     lexeme: string
     literal: string | number | undefined
     line: number
