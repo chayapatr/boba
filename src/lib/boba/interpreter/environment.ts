@@ -3,9 +3,9 @@
 export type Value = any
 
 export class Environment {
-    private values = new Map<string, Value>()
+    readonly values = new Map<string, Value>()
 
-    constructor(private parent: Environment | null = null) {}
+    constructor(readonly parent: Environment | null = null) {}
 
     define(name: string, value: Value): void {
         this.values.set(name, value)

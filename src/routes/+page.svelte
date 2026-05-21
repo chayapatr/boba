@@ -2,6 +2,8 @@
 	// @ts-nocheck
 	import { BOBA } from '$lib';
 	import type { ASTNode } from '$lib/boba/parser/generator';
+	import { createStepper } from '$lib/boba/interpreter/stepper';
+	import type { Stepper, StepFrame } from '$lib/boba/interpreter/stepper';
 	import Editor from '$lib/components/Editor.svelte';
 	import { source } from '$lib/store';
 	import { onMount } from 'svelte';
@@ -20,6 +22,11 @@
 		if (hash) {
 			try { $source = decodeURIComponent(hash); } catch {}
 		}
+
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && debugMode) { e.preventDefault(); stopDebug(); }
+			if (e.key === ' ' && debugMode && !autoPlaying) { e.preventDefault(); stepOnce(); }
+		});
 	});
 
 	$: if (typeof window !== 'undefined' && $source) {
@@ -65,6 +72,50 @@
 			code: 'fun fib(n) {\n  if (n <= 1) {\n    return n;\n  }\n  return fib(n - 1) + fib(n - 2);\n}\nprint fib(10);'
 		}
 	];
+
+	// ── Debugger ─────────────────────────────────────────────────
+	let debugMode = false;
+	let stepper: Stepper | null = null;
+	let stepFrame: StepFrame | null = null;
+	let autoPlaying = false;
+	let autoInterval: ReturnType<typeof setInterval> | null = null;
+
+	const startDebug = () => {
+		if (!result.parsed.nodes?.length) return;
+		stepper = createStepper(result.parsed.nodes);
+		stepFrame = stepper.step(); // advance to first frame
+		debugMode = true;
+		autoPlaying = false;
+	};
+
+	const stopDebug = () => {
+		debugMode = false;
+		stepper = null;
+		stepFrame = null;
+		stopAuto();
+	};
+
+	const stepOnce = () => {
+		if (!stepper || stepper.isDone) return;
+		stepFrame = stepper.step();
+	};
+
+	const stopAuto = () => {
+		if (autoInterval !== null) { clearInterval(autoInterval); autoInterval = null; }
+		autoPlaying = false;
+	};
+
+	const toggleAuto = () => {
+		if (autoPlaying) { stopAuto(); return; }
+		autoPlaying = true;
+		autoInterval = setInterval(() => {
+			if (!stepper || stepper.isDone) { stopAuto(); return; }
+			stepFrame = stepper.step();
+		}, 300);
+	};
+
+	// Reset debugger when source changes
+	$: if ($source) stopDebug();
 
 	// ── AST export ───────────────────────────────────────────────
 	const exportAST = () => {
@@ -208,6 +259,36 @@
 
 			<div class="flex-1"></div>
 
+			<!-- Debug mode -->
+			{#if result.parsed.nodes?.length > 0 && !debugMode}
+				<button
+					class="rounded border px-2 py-1 hover:opacity-70 text-amber-400"
+					style="border-color: var(--border);"
+					on:click={startDebug}
+					title="Start step-through debugger"
+				>
+					▷ debug
+				</button>
+			{/if}
+			{#if debugMode}
+				<button
+					class="rounded border px-2 py-1 text-amber-400 hover:opacity-70"
+					style="border-color: var(--border);"
+					on:click={stepOnce}
+					disabled={stepper?.isDone}
+				>step</button>
+				<button
+					class="rounded border px-2 py-1 hover:opacity-70"
+					style="border-color: var(--border); color: {autoPlaying ? '#f87171' : 'var(--text-muted)'};"
+					on:click={toggleAuto}
+				>{autoPlaying ? '⏸' : '▶'}</button>
+				<button
+					class="rounded border px-2 py-1 hover:opacity-70"
+					style="border-color: var(--border); color: var(--text-muted);"
+					on:click={stopDebug}
+				>✕</button>
+			{/if}
+
 			<!-- AST export -->
 			{#if result.parsed.nodes?.length > 0}
 				<button
@@ -285,12 +366,15 @@
 			class="flex flex-col overflow-scroll rounded-md border p-4"
 			style="height: 35%; background: var(--bg-panel); border-color: var(--border);"
 		>
-			<div class="mb-1 font-semibold">
+			<div class="mb-1 font-semibold flex items-center gap-2">
 				<span class={!result.parsed.error ? 'text-emerald-500' : 'text-red-400'}>
 					{!result.parsed.error
 						? '[PARSING SUCCESS]'
 						: `[ERROR: ${result.parsed.error.split(',').at(0)}]`}
 				</span>
+				{#if debugMode && stepFrame && !stepFrame.done}
+					<span class="text-amber-400 text-xs">▶ {stepFrame.nodeType}</span>
+				{/if}
 			</div>
 			<div class="w-max text-nowrap" style="color: var(--text);">
 				{#if result.scanned.success && !result.parsed.error}
@@ -299,25 +383,72 @@
 			</div>
 		</div>
 
-		<!-- OUTPUT -->
-		<div
-			class="flex flex-col overflow-scroll rounded-md border p-4"
-			style="height: 35%; background: var(--bg-panel); border-color: var(--border);"
-		>
-			<div class="mb-1 font-semibold">
-				<span class={result.interpreted.error ? 'text-red-400' : 'text-emerald-500'}>
-					{result.interpreted.error
-						? `[RUNTIME ERROR: ${result.interpreted.error}]`
-						: '[OUTPUT]'}
-				</span>
+		<!-- OUTPUT / DEBUG -->
+		{#if debugMode && stepFrame}
+			<!-- Debug: scope + output side by side -->
+			<div class="flex gap-3 overflow-hidden" style="height: 35%;">
+				<!-- Scope -->
+				<div
+					class="flex flex-1 flex-col overflow-scroll rounded-md border p-4"
+					style="background: var(--bg-panel); border-color: var(--border);"
+				>
+					<div class="mb-1 font-semibold">
+						<span class="text-amber-400">
+							[SCOPE{stepFrame.done ? ' · done' : ` · ${stepFrame.nodeType}`}]
+						</span>
+					</div>
+					{#if Object.keys(stepFrame.scope).length === 0}
+						<div style="color: var(--text-muted);">[empty]</div>
+					{:else}
+						{#each Object.entries(stepFrame.scope) as [name, val]}
+							<div class="grid grid-cols-2 gap-2">
+								<span class="text-blue-400">{name}</span>
+								<span style="color: var(--text);">{val}</span>
+							</div>
+						{/each}
+					{/if}
+					{#if stepFrame.error}
+						<div class="mt-2 text-red-400">[ERROR: {stepFrame.error}]</div>
+					{/if}
+				</div>
+				<!-- Output so far -->
+				<div
+					class="flex flex-1 flex-col overflow-scroll rounded-md border p-4"
+					style="background: var(--bg-panel); border-color: var(--border);"
+				>
+					<div class="mb-1 font-semibold">
+						<span class="text-emerald-500">[OUTPUT]</span>
+					</div>
+					{#if stepFrame.output.length === 0}
+						<div style="color: var(--text-muted);">[no output yet]</div>
+					{:else}
+						{#each stepFrame.output as line}
+							<div style="color: var(--text);">{line}</div>
+						{/each}
+					{/if}
+				</div>
 			</div>
-			{#if result.interpreted.output.length === 0 && !result.interpreted.error}
-				<div style="color: var(--text-muted);">[no output]</div>
-			{:else}
-				{#each result.interpreted.output as line}
-					<div style="color: var(--text);">{line}</div>
-				{/each}
-			{/if}
-		</div>
+		{:else}
+			<!-- Normal output -->
+			<div
+				class="flex flex-col overflow-scroll rounded-md border p-4"
+				style="height: 35%; background: var(--bg-panel); border-color: var(--border);"
+			>
+				<div class="mb-1 font-semibold">
+					<span class={result.interpreted.error ? 'text-red-400' : 'text-emerald-500'}>
+						{result.interpreted.error
+							? `[RUNTIME ERROR: ${result.interpreted.error}]`
+							: '[OUTPUT]'}
+					</span>
+				</div>
+				{#if result.interpreted.output.length === 0 && !result.interpreted.error}
+					<div style="color: var(--text-muted);">[no output]</div>
+				{:else}
+					{#each result.interpreted.output as line}
+						<div style="color: var(--text);">{line}</div>
+					{/each}
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>
