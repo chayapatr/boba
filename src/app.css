@@ -15,3 +15,25 @@
 	font-weight: 600;
 	font-style: regular;
 }
+
+:root {
+	--bg: #f9fafb;
+	--bg-panel: #f9fafb;
+	--border: #e5e7eb;
+	--border-divider: #9ca3af;
+	--text: #111827;
+	--text-muted: #6b7280;
+	--text-dim: #d1d5db;
+	--caret: #666;
+}
+
+.dark {
+	--bg: #111827;
+	--bg-panel: #1f2937;
+	--border: #374151;
+	--border-divider: #4b5563;
+	--text: #f9fafb;
+	--text-muted: #9ca3af;
+	--text-dim: #4b5563;
+	--caret: #9ca3af;
+}

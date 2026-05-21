@@ -8,13 +8,13 @@ const types = {
 
 const generate = (color: "blue" | "red" | "purple" | "green" | "orange" | "gray" | "lightgray", text: string) => {
     const tw = {
-        blue: 'text-blue-500',
-        red: 'text-red-600',
-        purple: 'text-purple-500',
-        green: 'text-lime-600',
-        orange: 'text-amber-600',
-        gray: 'text-neutral-500',
-        lightgray: 'text-neutral-300'
+        blue: 'text-blue-400',
+        red: 'text-red-400',
+        purple: 'text-purple-400',
+        green: 'text-lime-500',
+        orange: 'text-amber-400',
+        gray: 'text-[var(--text-muted)]',
+        lightgray: 'text-[var(--text-dim)]'
     }
     return `<span class="${tw[color]}">${text}</span>`
 }
@@ -27,7 +27,7 @@ const parseToken = (token: Token) => {
     if (types.single.includes(type) || types.comparison.includes(type) || types.keywords.includes(type))
         return generate("red", lexeme)
     if (type === "STRING")
-        return `<span class="text-purple-500">${lexeme.split("\n").join(`</span>%break%<span class="text-purple-500">`)}</span>`
+        return `<span class="text-purple-400">${lexeme.split("\n").join(`</span>%break%<span class="text-purple-400">`)}</span>`
     if (type === "NEWLINE") return `<br/>`
     if (type === "SPACE") return generate("lightgray", '⋅'.repeat(lexeme.length))
     return generate("blue", lexeme)
