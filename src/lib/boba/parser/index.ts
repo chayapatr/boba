@@ -107,6 +107,7 @@ const parseBlock = (tokens: Token[], location: number): { nodes: ASTNode[]; next
         const { node, next, error: e } = parseStatement(tokens, cur)
         nodes.push(node)
         error += e
+        if (next === cur) break
         cur = next
     }
     if (!match(tokens, cur, ["RIGHT_BRACE"]))
