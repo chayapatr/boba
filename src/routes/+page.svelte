@@ -51,6 +51,18 @@
 		{
 			label: 'String concat',
 			code: 'let name = "boba";\nprint "hello, " + name + "!";\nprint "2 + 2 = " + (2 + 2);'
+		},
+		{
+			label: 'Functions',
+			code: 'fun greet(name) {\n  return "hello, " + name + "!";\n}\nprint greet("world");\nprint greet("boba");'
+		},
+		{
+			label: 'Arrays',
+			code: 'let a = [10, 20, 30];\nprint a[0];\na[1] = 99;\nprint a[1];\nlet i = 0;\nwhile (i < 3) {\n  print a[i];\n  i = i + 1;\n}'
+		},
+		{
+			label: 'Recursion',
+			code: 'fun fib(n) {\n  if (n <= 1) {\n    return n;\n  }\n  return fib(n - 1) + fib(n - 2);\n}\nprint fib(10);'
 		}
 	];
 
@@ -153,6 +165,18 @@
 					);
 				case 'BLOCK':
 					return `<br/>${prefix}⊢ BLOCK${(n.body as ASTNode[]).map((s) => dfs(s, prefix + '&nbsp;&nbsp;')).join('')}`;
+				case 'FUN':
+					return `<br/>${prefix}⊢ FUN ${n.name}(${(n.params as string[]).join(', ')})${(n.body as ASTNode[]).map((s) => dfs(s, prefix + '&nbsp;&nbsp;')).join('')}`;
+				case 'RETURN':
+					return `<br/>${prefix}⊢ RETURN${n.value ? dfs(n.value as ASTNode, prefix + '&nbsp;&nbsp;') : ''}`;
+				case 'CALL':
+					return `<br/>${prefix}⊢ CALL${dfs(n.callee as ASTNode, prefix + '&nbsp;&nbsp;')}${(n.args as ASTNode[]).map((a) => dfs(a, prefix + '&nbsp;&nbsp;')).join('')}`;
+				case 'ARRAY':
+					return `<br/>${prefix}⊢ [${(n.elements as ASTNode[]).map((e) => dfs(e, prefix + '&nbsp;&nbsp;')).join(',')}]`;
+				case 'INDEX':
+					return `<br/>${prefix}⊢ INDEX${dfs(n.object as ASTNode, prefix + '&nbsp;&nbsp;')}[${dfs(n.index as ASTNode, '')}]`;
+				case 'INDEX_ASSIGN':
+					return `<br/>${prefix}⊢ INDEX_ASSIGN${dfs(n.object as ASTNode, prefix + '&nbsp;&nbsp;')}[${dfs(n.index as ASTNode, '')}] = ${dfs(n.value as ASTNode, prefix + '&nbsp;&nbsp;')}`;
 				default:
 					return `<br/>${prefix}⊢ ${n.type}`;
 			}

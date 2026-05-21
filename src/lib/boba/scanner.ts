@@ -87,6 +87,8 @@ const scanSingleCharSymbol: ScanFunction = (context) => {
         ")": "RIGHT_PAREN",
         "{": "LEFT_BRACE",
         "}": "RIGHT_BRACE",
+        "[": "LEFT_BRACKET",
+        "]": "RIGHT_BRACKET",
         ",": "COMMA",
         ".": "DOT",
         "-": "MINUS",
@@ -158,21 +160,25 @@ const scanStringLiteral: ScanFunction = (context) => {
     const [success, char] = view(0, context)
     if(!success || char !== '"') return { success: false }
     let leap = 1
+    let literal = ""
 
-    while(checkResult(
-            view(leap, context), 
-            (char: string) => char !== '"')
-        ) { leap += 1 }
+    while(true) {
+        const [ok, ch] = view(leap, context)
+        if(!ok || ch === '\n') return { success: false, error: "Unterminated String" }
+        if(ch === '"') break
+        if(ch === '\\') {
+            const [, next] = view(leap + 1, context)
+            const escapes: Record<string, string> = { n: '\n', t: '\t', '\\': '\\', '"': '"' }
+            if(next in escapes) { literal += escapes[next]; leap += 2; continue }
+        }
+        literal += ch
+        leap += 1
+    }
 
-    if(!checkResult(
-        view(leap, context),
-        (char: string) => char === '"')
-    ) return { success: false, error: "Unterminated String", leap: leap + 1 }
-
-    const literal = context.source.slice(context.start + 1, context.start + leap)
+    const lexeme = context.source.slice(context.start, context.start + leap + 1)
     return {
         success: true,
-        token: createToken("STRING", `"${literal}"`, literal, context.line),
+        token: createToken("STRING", lexeme, literal, context.line),
         leap: leap + 1
     }
 }

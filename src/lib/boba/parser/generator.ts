@@ -63,10 +63,42 @@ interface BlockStmt {
     body: ASTNode[]
 }
 
+interface FunStmt {
+    type: "FUN"
+    name: string
+    params: string[]
+    body: ASTNode[]
+}
+
+interface ReturnStmt {
+    type: "RETURN"
+    value: ASTNode | null
+}
+
+interface CallExpr extends Expr {
+    callee: ASTNode
+    args: ASTNode[]
+}
+
+interface ArrayExpr extends Expr {
+    elements: ASTNode[]
+}
+
+interface IndexExpr extends Expr {
+    object: ASTNode
+    index: ASTNode
+}
+
+interface IndexAssignExpr extends Expr {
+    object: ASTNode
+    index: ASTNode
+    value: ASTNode
+}
+
 export type ASTNode =
     | Expr | BinaryExpr | GroupingExpr | UnaryExpr
-    | VariableExpr | AssignExpr
-    | Stmt | VarStmt | IfStmt | WhileStmt | BlockStmt
+    | VariableExpr | AssignExpr | CallExpr | ArrayExpr | IndexExpr | IndexAssignExpr
+    | Stmt | VarStmt | IfStmt | WhileStmt | BlockStmt | FunStmt | ReturnStmt
 
 /* AST Node Generator Functions */
 
@@ -108,5 +140,23 @@ const While = (condition: ASTNode, body: ASTNode[]): WhileStmt =>
 const Block = (body: ASTNode[]): BlockStmt =>
     ({ type: "BLOCK", body })
 
-export const Stmt = { Print, Expression, Var, If, While, Block }
-export const Expr = { Binary, Grouping, Literal, Unary, Variable, Assign }
+const Fun = (name: string, params: string[], body: ASTNode[]): FunStmt =>
+    ({ type: "FUN", name, params, body })
+
+const Return = (value: ASTNode | null): ReturnStmt =>
+    ({ type: "RETURN", value })
+
+const Call = (callee: ASTNode, args: ASTNode[]): CallExpr =>
+    ({ type: "CALL", callee, args })
+
+const Array_ = (elements: ASTNode[]): ArrayExpr =>
+    ({ type: "ARRAY", elements })
+
+const Index = (object: ASTNode, index: ASTNode): IndexExpr =>
+    ({ type: "INDEX", object, index })
+
+const IndexAssign = (object: ASTNode, index: ASTNode, value: ASTNode): IndexAssignExpr =>
+    ({ type: "INDEX_ASSIGN", object, index, value })
+
+export const Stmt = { Print, Expression, Var, If, While, Block, Fun, Return }
+export const Expr = { Binary, Grouping, Literal, Unary, Variable, Assign, Call, Array: Array_, Index, IndexAssign }

@@ -27,15 +27,31 @@ const primary: ExprFn = (tokens, location) => {
     if (match(tokens, location, ["TRUE", "FALSE", "NIL"]))
         return { node: Expr.Literal(bool[tokens[location].type as "TRUE" | "FALSE" | "NIL"]), next: location + 1, error: "" }
 
-    if (match(tokens, location, ["IDENTIFIER"])) {
+    if (match(tokens, location, ["IDENTIFIER"]))
         return { node: Expr.Variable(get(tokens, location)), next: location + 1, error: "" }
-    }
 
     if (match(tokens, location, ["LEFT_PAREN"])) {
         const { node: expr, next, error } = expression(tokens, location + 1)
         if (match(tokens, next, ["RIGHT_PAREN"]))
             return { node: Expr.Grouping(expr), next: next + 1, error }
         return { node: Expr.Literal(null), next: location + 1, error: error || `[TOKEN ${location}] PARENTHESIS NOT CLOSED` }
+    }
+
+    // Array literal: [ expr, expr, ... ]
+    if (match(tokens, location, ["LEFT_BRACKET"])) {
+        const elements: ASTNode[] = []
+        let cur = location + 1
+        let error = ""
+        while (!isAtEnd(tokens, cur) && !match(tokens, cur, ["RIGHT_BRACKET"])) {
+            const { node, next, error: e } = expression(tokens, cur)
+            elements.push(node)
+            error += e
+            cur = next
+            if (match(tokens, cur, ["COMMA"])) cur++
+        }
+        if (!match(tokens, cur, ["RIGHT_BRACKET"]))
+            return { node: Expr.Literal(null), next: cur, error: error + ` [TOKEN ${cur}] EXPECTED ']'` }
+        return { node: Expr.Array(elements), next: cur + 1, error }
     }
 
     if (match(tokens, location, ["RIGHT_PAREN"]))
@@ -47,13 +63,55 @@ const primary: ExprFn = (tokens, location) => {
     return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location}] UNEXPECTED TOKEN '${tokens[location].lexeme}'` }
 }
 
+// call/index: handles f(args) and a[i] postfix operators
+const callOrIndex: ExprFn = (tokens, location) => {
+    let { node, next, error } = primary(tokens, location)
+
+    while (true) {
+        if (match(tokens, next, ["LEFT_PAREN"])) {
+            // function call
+            const args: ASTNode[] = []
+            let cur = next + 1
+            while (!isAtEnd(tokens, cur) && !match(tokens, cur, ["RIGHT_PAREN"])) {
+                const { node: arg, next: n2, error: e } = expression(tokens, cur)
+                args.push(arg)
+                error += e
+                cur = n2
+                if (match(tokens, cur, ["COMMA"])) cur++
+            }
+            if (!match(tokens, cur, ["RIGHT_PAREN"])) {
+                error += ` [TOKEN ${cur}] EXPECTED ')' AFTER ARGS`
+            } else {
+                cur++
+            }
+            node = Expr.Call(node, args)
+            next = cur
+        } else if (match(tokens, next, ["LEFT_BRACKET"])) {
+            // index access a[i]
+            const { node: idx, next: n2, error: e } = expression(tokens, next + 1)
+            error += e
+            if (!match(tokens, n2, ["RIGHT_BRACKET"])) {
+                error += ` [TOKEN ${n2}] EXPECTED ']'`
+                next = n2
+            } else {
+                next = n2 + 1
+            }
+            node = Expr.Index(node, idx)
+        } else {
+            break
+        }
+    }
+
+    return { node, next, error }
+}
+
 const unary: ExprFn = (tokens, location) => {
     if (match(tokens, location, ["BANG", "MINUS"])) {
         const opr = get(tokens, location)
         const { node: right, next, error } = unary(tokens, location + 1)
         return { node: Expr.Unary(opr, right), next, error }
     }
-    return primary(tokens, location)
+    return callOrIndex(tokens, location)
 }
 
 const binaryGen = (tokens: Token[], location: number, sub: ExprFn, ops: TokenTypeStrings[]): ExprResult => {
@@ -75,11 +133,18 @@ const equality: ExprFn   = (t, l) => binaryGen(t, l, comparison, ["BANG_EQUAL", 
 
 const assignment: ExprFn = (tokens, location) => {
     const { node, next, error } = equality(tokens, location)
+
     if (match(tokens, next, ["EQUAL"])) {
         const { node: value, next: n2, error: e2 } = assignment(tokens, next + 1)
+        // plain variable assignment: x = val
         if (node.type === "VARIABLE") {
             const varNode = node as { type: string; name: Token }
             return { node: Expr.Assign(varNode.name.lexeme, value), next: n2, error: error + e2 }
+        }
+        // index assignment: a[i] = val
+        if (node.type === "INDEX") {
+            const idxNode = node as { type: string; object: ASTNode; index: ASTNode }
+            return { node: Expr.IndexAssign(idxNode.object, idxNode.index, value), next: n2, error: error + e2 }
         }
         return { node: Expr.Literal(null), next: n2, error: error + e2 + " INVALID ASSIGNMENT TARGET" }
     }
@@ -141,6 +206,38 @@ const parseStatement = (tokens: Token[], location: number): StmtResult => {
         return { node: Stmt.Var(name, expr), next: n2, error: error + e2 }
     }
 
+    // function declaration: fun name(params) { body }
+    if (match(tokens, location, ["FUN"])) {
+        if (!match(tokens, location + 1, ["IDENTIFIER"]))
+            return { node: Expr.Literal(null), next: location + 1, error: `[TOKEN ${location + 1}] EXPECTED FUNCTION NAME` }
+        const name = get(tokens, location + 1).lexeme
+        if (!match(tokens, location + 2, ["LEFT_PAREN"]))
+            return { node: Expr.Literal(null), next: location + 2, error: `[TOKEN ${location + 2}] EXPECTED '(' AFTER FUNCTION NAME` }
+        const params: string[] = []
+        let cur = location + 3
+        while (!isAtEnd(tokens, cur) && !match(tokens, cur, ["RIGHT_PAREN"])) {
+            if (!match(tokens, cur, ["IDENTIFIER"]))
+                break
+            params.push(get(tokens, cur).lexeme)
+            cur++
+            if (match(tokens, cur, ["COMMA"])) cur++
+        }
+        if (!match(tokens, cur, ["RIGHT_PAREN"]))
+            return { node: Expr.Literal(null), next: cur, error: `[TOKEN ${cur}] EXPECTED ')' AFTER PARAMS` }
+        cur++
+        const { nodes: body, next: afterBody, error } = parseBlock(tokens, cur)
+        return { node: Stmt.Fun(name, params, body), next: afterBody, error }
+    }
+
+    // return statement
+    if (match(tokens, location, ["RETURN"])) {
+        if (match(tokens, location + 1, ["SEMICOLON"]))
+            return { node: Stmt.Return(null), next: location + 2, error: "" }
+        const { node: val, next, error } = expression(tokens, location + 1)
+        const { next: n2, error: e2 } = consumeSemicolon(tokens, next)
+        return { node: Stmt.Return(val), next: n2, error: error + e2 }
+    }
+
     // if statement
     if (match(tokens, location, ["IF"])) {
         if (!match(tokens, location + 1, ["LEFT_PAREN"]))
@@ -197,7 +294,7 @@ export const parse = (tokens: Token[]): { nodes: ASTNode[]; error: string } => {
         const { node, next, error: e } = parseStatement(sem, cur)
         nodes.push(node)
         error += e
-        if (next === cur) break   // safety: no progress → stop
+        if (next === cur) break
         cur = next
     }
 

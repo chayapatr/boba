@@ -2,14 +2,39 @@ import { Environment } from "./environment"
 import type { Value } from "./environment"
 import type { ASTNode } from "../parser/generator"
 
-const isTruthy = (v: Value): boolean => v !== null && v !== false
+// ── Types ────────────────────────────────────────────────────────
 
-const stringify = (v: Value): string => {
+type BobaArray = { kind: "array"; elements: Value[] }
+type BobaFn    = { kind: "fn"; name: string; params: string[]; body: ASTNode[]; closure: Environment }
+type BobaValue = Value | BobaArray | BobaFn
+
+class ReturnSignal {
+    constructor(public value: BobaValue) {}
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+const isTruthy = (v: BobaValue): boolean => {
+    if (v === null || v === false) return false
+    if (typeof v === "object" && "kind" in v) return true
+    return v !== 0 && v !== ""
+}
+
+const stringify = (v: BobaValue): string => {
     if (v === null) return "nil"
+    if (typeof v === "object" && "kind" in v) {
+        if (v.kind === "array") return "[" + v.elements.map(stringify).join(", ") + "]"
+        if (v.kind === "fn") return `<fun ${v.name}>`
+    }
     return String(v)
 }
 
-const evaluate = (node: ASTNode, env: Environment): Value => {
+// ── Evaluate ─────────────────────────────────────────────────────
+
+// Thread output through evaluation without passing it everywhere
+let _currentOutput: string[] = []
+
+const evaluate = (node: ASTNode, env: Environment): BobaValue => {
     const n = node as Record<string, unknown>
 
     switch (n.type as string) {
@@ -62,8 +87,63 @@ const evaluate = (node: ASTNode, env: Environment): Value => {
 
         case "ASSIGN": {
             const value = evaluate(n.value as ASTNode, env)
-            env.set(n.name as string, value)
+            env.set(n.name as string, value as Value)
             return value
+        }
+
+        case "ARRAY": {
+            const elements = (n.elements as ASTNode[]).map(e => evaluate(e, env))
+            return { kind: "array", elements }
+        }
+
+        case "INDEX": {
+            const obj = evaluate(n.object as ASTNode, env)
+            const idx = evaluate(n.index as ASTNode, env)
+            if (typeof obj === "object" && obj !== null && "kind" in obj && obj.kind === "array") {
+                if (typeof idx !== "number") throw new Error("Array index must be a number.")
+                const i = Math.floor(idx)
+                if (i < 0 || i >= obj.elements.length) throw new Error(`Index ${i} out of bounds (length ${obj.elements.length}).`)
+                return obj.elements[i]
+            }
+            if (typeof obj === "string") {
+                if (typeof idx !== "number") throw new Error("String index must be a number.")
+                const i = Math.floor(idx)
+                if (i < 0 || i >= obj.length) throw new Error(`Index ${i} out of bounds.`)
+                return obj[i]
+            }
+            throw new Error("Only arrays and strings can be indexed.")
+        }
+
+        case "INDEX_ASSIGN": {
+            const obj = evaluate(n.object as ASTNode, env)
+            const idx = evaluate(n.index as ASTNode, env)
+            const val = evaluate(n.value as ASTNode, env)
+            if (typeof obj === "object" && obj !== null && "kind" in obj && obj.kind === "array") {
+                if (typeof idx !== "number") throw new Error("Array index must be a number.")
+                const i = Math.floor(idx)
+                if (i < 0 || i >= obj.elements.length) throw new Error(`Index ${i} out of bounds.`)
+                obj.elements[i] = val
+                return val
+            }
+            throw new Error("Only arrays support index assignment.")
+        }
+
+        case "CALL": {
+            const callee = evaluate(n.callee as ASTNode, env)
+            const args = (n.args as ASTNode[]).map(a => evaluate(a, env))
+            if (typeof callee !== "object" || callee === null || !("kind" in callee) || callee.kind !== "fn")
+                throw new Error(`'${stringify(callee)}' is not a function.`)
+            if (args.length !== callee.params.length)
+                throw new Error(`Expected ${callee.params.length} args but got ${args.length}.`)
+            const fnEnv = new Environment(callee.closure)
+            callee.params.forEach((p, i) => fnEnv.define(p, args[i] as Value))
+            try {
+                executeBlock(callee.body, fnEnv, _currentOutput)
+            } catch (e) {
+                if (e instanceof ReturnSignal) return e.value
+                throw e
+            }
+            return null
         }
 
         default:
@@ -71,10 +151,10 @@ const evaluate = (node: ASTNode, env: Environment): Value => {
     }
 }
 
+// ── Execute ──────────────────────────────────────────────────────
+
 const executeBlock = (stmts: ASTNode[], env: Environment, output: string[]): void => {
-    for (const stmt of stmts) {
-        executeStmt(stmt, env, output)
-    }
+    for (const stmt of stmts) executeStmt(stmt, env, output)
 }
 
 const executeStmt = (node: ASTNode, env: Environment, output: string[]): void => {
@@ -93,9 +173,24 @@ const executeStmt = (node: ASTNode, env: Environment, output: string[]): void =>
 
         case "VAR": {
             const val = n.expr ? evaluate(n.expr as ASTNode, env) : null
-            env.define(n.name as string, val)
+            env.define(n.name as string, val as Value)
             break
         }
+
+        case "FUN": {
+            const fn: BobaFn = {
+                kind: "fn",
+                name: n.name as string,
+                params: n.params as string[],
+                body: n.body as ASTNode[],
+                closure: env
+            }
+            env.define(n.name as string, fn as unknown as Value)
+            break
+        }
+
+        case "RETURN":
+            throw new ReturnSignal(n.value ? evaluate(n.value as ASTNode, env) : null)
 
         case "IF": {
             const cond = evaluate(n.condition as ASTNode, env)
@@ -123,13 +218,16 @@ const executeStmt = (node: ASTNode, env: Environment, output: string[]): void =>
     }
 }
 
+// ── Public API ───────────────────────────────────────────────────
+
 export const interpret = (stmts: ASTNode[]): { output: string[]; error: string | null } => {
-    const output: string[] = []
+    _currentOutput = []
     const env = new Environment()
     try {
-        executeBlock(stmts, env, output)
-        return { output, error: null }
+        executeBlock(stmts, env, _currentOutput)
+        return { output: _currentOutput, error: null }
     } catch (e) {
-        return { output, error: (e as Error).message }
+        if (e instanceof ReturnSignal) return { output: _currentOutput, error: "Return outside of function." }
+        return { output: _currentOutput, error: (e as Error).message }
     }
 }

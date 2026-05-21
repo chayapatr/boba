@@ -1,4 +1,6 @@
-export type Value = number | string | boolean | null
+// Value is kept loose so arrays and functions (objects) can be stored
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Value = any
 
 export class Environment {
     private values = new Map<string, Value>()
