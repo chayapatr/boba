@@ -6,31 +6,24 @@ const types = {
     keywords: ['AND', 'CLASS', 'ELSE', 'FALSE', 'FUN', 'FOR', 'IF', 'NIL', 'OR', 'PRINT', 'RETURN', 'SUPER', 'THIS', 'TRUE', 'LET', 'CONST', 'WHILE']
 }
 
-const generate = (color: "blue" | "red" | "purple" | "green" | "orange" | "gray" | "lightgray", text: string) => {
-    const tw = {
-        blue: 'text-blue-400',
-        red: 'text-red-400',
-        purple: 'text-purple-400',
-        green: 'text-lime-500',
-        orange: 'text-amber-400',
-        gray: 'text-[var(--text-muted)]',
-        lightgray: 'text-[var(--text-dim)]'
-    }
-    return `<span class="${tw[color]}">${text}</span>`
-}
+const generate = (varName: string, text: string) =>
+    `<span style="color:var(${varName})">${text}</span>`
 
 const parseToken = (token: Token) => {
     const { type, lexeme } = token
-    if (["TRUE", "FALSE", "IDENTIFIER", "NUMBER"].includes(type)) return generate("blue", lexeme)
-    if (types.cover.includes(type)) return generate("gray", lexeme)
-    if (type === "PRINT") return generate("orange", lexeme)
+    if (type === "IDENTIFIER") return generate("--syn-identifier", lexeme)
+    if (type === "NUMBER") return generate("--syn-number", lexeme)
+    if (type === "TRUE" || type === "FALSE") return generate("--syn-identifier", lexeme)
+    if (types.cover.includes(type)) return generate("--syn-bracket", lexeme)
+    if (type === "PRINT") return generate("--syn-print", lexeme)
+    if (type === "FUN") return generate("--syn-function", lexeme)
     if (types.single.includes(type) || types.comparison.includes(type) || types.keywords.includes(type))
-        return generate("red", lexeme)
+        return generate("--syn-keyword", lexeme)
     if (type === "STRING")
-        return `<span class="text-purple-400">${lexeme.split("\n").join(`</span>%break%<span class="text-purple-400">`)}</span>`
+        return `<span style="color:var(--syn-string)">${lexeme.split("\n").join(`</span>%break%<span style="color:var(--syn-string)">`)}</span>`
     if (type === "NEWLINE") return `<br/>`
-    if (type === "SPACE") return generate("lightgray", '⋅'.repeat(lexeme.length))
-    return generate("blue", lexeme)
+    if (type === "SPACE") return generate("--syn-space", '⋅'.repeat(lexeme.length))
+    return generate("--syn-identifier", lexeme)
 }
 
 export const beautify = (tokens: Token[]): string[] =>

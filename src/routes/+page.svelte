@@ -262,8 +262,8 @@
 			<!-- Debug mode -->
 			{#if result.parsed.nodes?.length > 0 && !debugMode}
 				<button
-					class="rounded border px-2 py-1 hover:opacity-70 text-amber-400"
-					style="border-color: var(--border);"
+					class="rounded border px-2 py-1 hover:opacity-70"
+					style="border-color: var(--border); color: var(--syn-print);"
 					on:click={startDebug}
 					title="Start step-through debugger"
 				>
@@ -272,14 +272,14 @@
 			{/if}
 			{#if debugMode}
 				<button
-					class="rounded border px-2 py-1 text-amber-400 hover:opacity-70"
-					style="border-color: var(--border);"
+					class="rounded border px-2 py-1 hover:opacity-70"
+					style="border-color: var(--border); color: var(--syn-print);"
 					on:click={stepOnce}
 					disabled={stepper?.isDone}
 				>step</button>
 				<button
 					class="rounded border px-2 py-1 hover:opacity-70"
-					style="border-color: var(--border); color: {autoPlaying ? '#f87171' : 'var(--text-muted)'};"
+					style="border-color: var(--border); color: {autoPlaying ? 'var(--syn-keyword)' : 'var(--text-muted)'};"
 					on:click={toggleAuto}
 				>{autoPlaying ? '⏸' : '▶'}</button>
 				<button
@@ -338,7 +338,7 @@
 			style="height: 30%; background: var(--bg-panel); border-color: var(--border);"
 		>
 			<div class="mb-1 font-semibold">
-				<span class={result.scanned.success ? 'text-emerald-500' : 'text-red-400'}>
+				<span style="color: {result.scanned.success ? 'var(--syn-function)' : 'var(--syn-keyword)'}">
 					{result.scanned.success ? '[SCANNING SUCCESS]' : `[ERROR: ${result.scanned.msg}]`}
 				</span>
 			</div>
@@ -355,7 +355,7 @@
 					<div class="w-full overflow-x-clip">{token.lexeme}</div>
 					<div>{token.literal ?? ''}</div>
 					<div
-						class={errorLine !== null && token.line === errorLine ? 'text-red-400 font-semibold' : ''}
+						style={errorLine !== null && token.line === errorLine ? `color: var(--syn-keyword); font-weight: 600;` : ''}
 					>{token.line}</div>
 				</li>
 			{/each}
@@ -367,13 +367,13 @@
 			style="height: 35%; background: var(--bg-panel); border-color: var(--border);"
 		>
 			<div class="mb-1 font-semibold flex items-center gap-2">
-				<span class={!result.parsed.error ? 'text-emerald-500' : 'text-red-400'}>
+				<span style="color: {!result.parsed.error ? 'var(--syn-function)' : 'var(--syn-keyword)'}">
 					{!result.parsed.error
 						? '[PARSING SUCCESS]'
 						: `[ERROR: ${result.parsed.error.split(',').at(0)}]`}
 				</span>
 				{#if debugMode && stepFrame && !stepFrame.done}
-					<span class="text-amber-400 text-xs">▶ {stepFrame.nodeType}</span>
+					<span style="color: var(--syn-print);" class="text-xs">▶ {stepFrame.nodeType}</span>
 				{/if}
 			</div>
 			<div class="w-max text-nowrap" style="color: var(--text);">
@@ -393,7 +393,7 @@
 					style="background: var(--bg-panel); border-color: var(--border);"
 				>
 					<div class="mb-1 font-semibold">
-						<span class="text-amber-400">
+						<span style="color: var(--syn-print);">
 							[SCOPE{stepFrame.done ? ' · done' : ` · ${stepFrame.nodeType}`}]
 						</span>
 					</div>
@@ -402,13 +402,13 @@
 					{:else}
 						{#each Object.entries(stepFrame.scope) as [name, val]}
 							<div class="grid grid-cols-2 gap-2">
-								<span class="text-blue-400">{name}</span>
+								<span style="color: var(--syn-identifier);">{name}</span>
 								<span style="color: var(--text);">{val}</span>
 							</div>
 						{/each}
 					{/if}
 					{#if stepFrame.error}
-						<div class="mt-2 text-red-400">[ERROR: {stepFrame.error}]</div>
+						<div class="mt-2" style="color: var(--syn-keyword);">[ERROR: {stepFrame.error}]</div>
 					{/if}
 				</div>
 				<!-- Output so far -->
@@ -417,7 +417,7 @@
 					style="background: var(--bg-panel); border-color: var(--border);"
 				>
 					<div class="mb-1 font-semibold">
-						<span class="text-emerald-500">[OUTPUT]</span>
+						<span style="color: var(--syn-function);">[OUTPUT]</span>
 					</div>
 					{#if stepFrame.output.length === 0}
 						<div style="color: var(--text-muted);">[no output yet]</div>
@@ -435,7 +435,7 @@
 				style="height: 35%; background: var(--bg-panel); border-color: var(--border);"
 			>
 				<div class="mb-1 font-semibold">
-					<span class={result.interpreted.error ? 'text-red-400' : 'text-emerald-500'}>
+					<span style="color: {result.interpreted.error ? 'var(--syn-keyword)' : 'var(--syn-function)'};">
 						{result.interpreted.error
 							? `[RUNTIME ERROR: ${result.interpreted.error}]`
 							: '[OUTPUT]'}

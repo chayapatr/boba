@@ -55,12 +55,12 @@
 				<div
 					class="flex divide-x"
 					style="border-color: var(--border-divider);
-					       {errorLine !== null && i + 1 === errorLine ? 'text-decoration: underline wavy #f87171; text-underline-offset: 3px;' : ''}
+					       {errorLine !== null && i + 1 === errorLine ? 'text-decoration: underline wavy var(--syn-keyword); text-underline-offset: 3px;' : ''}
 					       {bracketHighlights.has(i) ? 'background: rgba(250,204,21,0.15);' : ''}"
 				>
 					<div
 						class="w-6 pr-2 text-right md:w-12"
-						style="color: {errorLine !== null && i + 1 === errorLine ? '#f87171' : 'var(--text-muted)'};"
+						style="color: {errorLine !== null && i + 1 === errorLine ? 'var(--syn-keyword)' : 'var(--text-muted)'};"
 					>
 						{i + 1}
 					</div>
